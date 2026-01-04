@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MCPE TIERS | FINAL FIXED V31</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --accent-blue: #007cf0;
+            --neon-cyan: #00dfff;
+            --bg-deep: #020408;
+            --surface-dark: #0a0e14;
+            --surface-light: #121821;
+            --border-color: rgba(0, 223, 255, 0.15);
+            --text-main: #ffffff;
+            --text-dim: #8a96a3;
+            --shadow-glow: 0 0 20px rgba(0, 124, 240, 0.3);
+            --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif;
+            overflow-x: hidden; min-height: 100vh;
+            background-image: radial-gradient(circle at 0% 0%, #001a33 0%, transparent 40%);
+        }
+
+        .app-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        header { padding: 40px 0; text-align: center; }
+        header h1 { 
+            font-size: 2.5rem; font-weight: 900; letter-spacing: 8px; text-transform: uppercase;
+            background: linear-gradient(to right, #fff, var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* Kits Navigation */
+        .kits-frame {
+            background: var(--surface-dark); border: 1px solid var(--border-color);
+            border-radius: 15px; padding: 15px; margin-bottom: 30px; display: flex; align-items: center;
+        }
+        .kits-label { font-size: 0.8rem; font-weight: 900; color: var(--accent-blue); text-transform: uppercase; margin-right: 20px; }
+        .kits-list { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; }
+        .kit-tab {
+            padding: 8px 18px; border-radius: 8px; background: var(--surface-light);
+            font-size: 0.75rem; font-weight: 700; color: var(--text-dim); white-space: nowrap; cursor: pointer;
+        }
+        .kit-tab.active { background: var(--accent-blue); color: white; box-shadow: 0 0 15px var(--accent-blue); }
+
+        /* Player Cards */
+        .player-card {
+            background: var(--surface-dark); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 20px; cursor: pointer; transition: var(--transition);
+            position: relative; margin-bottom: 15px;
+        }
+        .card-main { display: flex; align-items: center; margin-bottom: 15px; }
+        .rank-tag { font-size: 1.2rem; font-weight: 900; color: var(--accent-blue); margin-right: 15px; opacity: 0.6; }
+        .p-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent-blue); object-fit: cover; margin-right: 15px; }
+        .p-name { font-size: 1.2rem; font-weight: 800; display: block; }
+        .p-points { font-size: 0.7rem; color: var(--neon-cyan); font-weight: 900; }
+
+        .card-tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .tier-chip { background: rgba(0,0,0,0.3); padding: 5px; border-radius: 6px; text-align: center; }
+        .tier-chip span { display: block; font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; }
+        .tier-chip b { font-size: 0.75rem; font-weight: 900; }
+
+        /* Dev Mode UI */
+        .dev-fab {
+            position: fixed; bottom: 30px; right: 30px; width: 55px; height: 55px;
+            background: var(--surface-dark); border: 2px solid var(--accent-blue);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: var(--accent-blue); cursor: pointer; z-index: 1000; box-shadow: var(--shadow-glow);
+        }
+        .admin-controls { display: none; border: 1px dashed var(--accent-blue); border-radius: 15px; padding: 15px; margin-bottom: 20px; }
+        .drag-trigger { position: absolute; right: 20px; top: 20px; color: #222; font-size: 1.2rem; display: none; cursor: grab; }
+
+        /* Overlays & Modals */
+        .overlay { position: fixed; inset: 0; background: var(--bg-deep); z-index: 2000; display: none; padding: 40px 20px; overflow-y: auto; }
+        .modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 400px; background: var(--surface-dark);
+            border: 1px solid var(--accent-blue); border-radius: 25px; padding: 30px;
+            z-index: 3000; display: none;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 10px; color: var(--accent-blue); font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .input-group input, .input-group select { width: 100%; background: var(--bg-deep); border: 1px solid var(--border-color); padding: 12px; color: #fff; border-radius: 8px; }
+
+        .btn { width: 100%; padding: 14px; border-radius: 10px; font-weight: 900; border: none; cursor: pointer; text-transform: uppercase; }
+        .btn-blue { background: var(--accent-blue); color: #fff; }
+        .btn-danger { background: #ff3e3e; color: #fff; margin-top: 10px; }
+        .btn-ghost { background: transparent; border: 1px solid #fff; color: #fff; margin-top: 10px; }
+
+        /* Tiers */
+        .ht1 { color: #ff3e3e; } .lt1 { color: #00ff88; } .ht2 { color: #ff8800; }
+        .lt2 { color: #00d2ff; } .ht3 { color: #ffaa00; } .lt3 { color: #007cf0; } .ft { color: #555; }
+
+        /* Profile Grid */
+        .prof-header { text-align: center; margin-bottom: 30px; }
+        .prof-avatar-big { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent-blue); object-fit: cover; }
+        .prof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .prof-kit-card { background: var(--surface-light); padding: 15px; border-radius: 15px; border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+
+    <div class="dev-fab" id="devFab"><i class="fas fa-cog"></i></div>
+
+    <div class="app-container">
+        <header><h1>MCPE TIERS</h1></header>
+
+        <div class="admin-controls" id="adminGlobal">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="btn btn-blue" onclick="openPlayerEditor()">+ Add Legend</button>
+                <button class="btn btn-ghost" onclick="openKitEditor()">⚙ Manage Kits</button>
+            </div>
+        </div>
+
+        <div class="kits-frame">
+            <span class="kits-label">Kits</span>
+            <div class="kits-list" id="kitTabs"></div>
+        </div>
+
+        <div class="player-grid" id="playerList"></div>
+    </div>
+
+    <div class="overlay" id="profileOverlay">
+        <div class="app-container">
+            <div style="text-align: right; margin-bottom: 20px;">
+                <i class="fas fa-times-circle" style="font-size: 2rem; cursor: pointer;" onclick="closeOverlay()"></i>
+            </div>
+            <div id="profileContent"></div>
+            <div id="profileAdminArea"></div>
+            <div class="prof-grid" id="profileKitsGrid"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="loginModal">
+        <h2 style="text-align: center; color: var(--accent-blue); margin-bottom: 15px;">DEVELOPER LOGIN</h2>
+        <input type="password" id="devPass" placeholder="Enter Code..." style="width:100%; padding:15px; background:#000; border:1px solid var(--accent-blue); color:#fff; border-radius:10px;">
+        <button class="btn btn-blue" style="margin-top: 15px;" onclick="checkDevAuth()">LOG IN</button>
+    </div>
+
+    <div class="modal" id="playerModal" style="max-height: 85vh; overflow-y: auto;">
+        <h3>EDIT LEGEND</h3>
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="pNameInput">
+        </div>
+        <div class="input-group">
+            <label>Avatar (File)</label>
+            <input type="file" onchange="processImage(this, 'pImgData')">
+            <input type="hidden" id="pImgData">
+        </div>
+        <div id="tierInputsArea"></div>
+        <input type="hidden" id="editingPlayerId">
+        <button class="btn btn-blue" onclick="savePlayer()">Save Data</button>
+        <button class="btn btn-danger" id="delPlayerBtn" onclick="deletePlayer()">Delete Player</button>
+        <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
+    </div>
+
+    <div class="modal" id="kitModal">
+        <h3>MANAGE KITS</h3>
+        <div class="input-group">
+            <label>New Kit Name</label>
+            <input type="text" id="kNameInput">
+        </div>
+        <div id="existingKits" style="margin-bottom: 20px;"></div>
+        <button class="btn btn-blue" onclick="saveKit()">Add Kit</button>
+        <button class="btn btn-ghost" onclick="closeModals()">Close</button>
+    </div>
+
+    <script>
+        const TIER_WEIGHTS = {
+            "HT1": 150, "LT1": 130, "HT2": 110, "LT2": 95, 
+            "HT3": 80, "LT3": 65, "HT4": 50, "LT4": 40,
+            "HT5": 30, "LT5": 20, "FT": 5, "None": 0
+        };
+
+        let state = {
+            db: JSON.parse(localStorage.getItem('mc_tiers_v31')) || {
+                kits: [{id: "1", name: "SWORD"}, {id: "2", name: "AXE"}, {id: "3", name: "MACE"}],
+                players: []
+            },
+            currentKit: "OVERALL",
+            isDev: false
+        };
+
+        function init() {
+            renderKits();
+            renderPlayers();
+            document.getElementById('devFab').onclick = () => {
+                if (state.isDev) { state.isDev = false; document.getElementById('adminGlobal').style.display = 'none'; renderPlayers(); }
+                else { document.getElementById('loginModal').style.display = 'block'; }
+            };
+        }
+
+        function renderKits() {
+            let html = `<div class="kit-tab ${state.currentKit === 'OVERALL' ? 'active' : ''}" onclick="setKit('OVERALL')">OVERALL</div>`;
+            state.db.kits.forEach(k => {
+                html += `<div class="kit-tab ${state.currentKit === k.name ? 'active' : ''}" onclick="setKit('${k.name}')">${k.name}</div>`;
+            });
+            document.getElementById('kitTabs').innerHTML = html;
+        }
+
+        function calculateScore(p) {
+            return Object.values(p.tiers).reduce((acc, t) => acc + (TIER_WEIGHTS[t] || 0), 0);
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playerList');
+            container.innerHTML = "";
+            let list = [...state.db.players];
+            
+            list.sort((a, b) => {
+                if (state.currentKit === "OVERALL") return calculateScore(b) - calculateScore(a);
+                return (TIER_WEIGHTS[b.tiers[state.currentKit]] || 0) - (TIER_WEIGHTS[a.tiers[state.currentKit]] || 0);
+            });
+
+            list.forEach((p, i) => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.innerHTML = `
+                    <i class="fas fa-grip-lines drag-trigger" style="display: ${state.isDev ? 'block' : 'none'}"></i>
+                    <div class="card-main" onclick="showProfile('${p.id}')">
+                        <span class="rank-tag">#${i+1}</span>
+                        <img src="${p.img || 'https://crafthead.net/helm/'+p.name+'/64'}" class="p-avatar">
+                        <div class="p-info">
+                            <span class="p-name">${p.name}</span>
+                            <span class="p-points">${calculateScore(p)} POINTS</span>
+                        </div>
+                    </div>
+                    <div class="card-tiers">
+                        ${state.db.kits.slice(0, 4).map(k => `
+                            <div class="tier-chip"><span>${k.name}</span><b>${p.tiers[k.name] || 'None'}</b></div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            gsap.from(".player-card", { opacity: 0, y: 20, stagger: 0.05 });
+            if (state.isDev) initSortable();
+        }
+
+        function showProfile(id) {
+            const p = state.db.players.find(x => x.id === id);
+            document.getElementById('profileContent').innerHTML = `
+                <div class="prof-header">
+                    <img src="${p.img || 'https://crafthead.net/helm/'+p.name+'/128'}" class="prof-avatar-big">
+                    <h2>${p.name}</h2>
+                    <p style="color:var(--neon-cyan)">SCORE: ${calculateScore(p)}</p>
+                </div>`;
+            
+            // FIX: الربط الصحيح لزر التعديل
+            document.getElementById('profileAdminArea').innerHTML = state.isDev ? `
+                <button class="btn btn-blue" onclick="openPlayerEditor('${p.id}')">MODIFY PLAYER</button>
+            ` : '';
+
+            document.getElementById('profileKitsGrid').innerHTML = state.db.kits.map(k => `
+                <div class="prof-kit-card">
+                    <label>${k.name}</label>
+                    <b class="${(p.tiers[k.name] || 'None').toLowerCase()}">${p.tiers[k.name] || 'None'}</b>
+                </div>`).join('');
+            
+            document.getElementById('profileOverlay').style.display = 'block';
+            gsap.from("#profileOverlay", { opacity: 0, scale: 0.95 });
+        }
+
+        function checkDevAuth() {
+            if (document.getElementById('devPass').value === "editorxxx") {
+                state.isDev = true;
+                closeModals();
+                document.getElementById('adminGlobal').style.display = 'block';
+                renderPlayers();
+            } else { alert("WRONG CODE"); }
+        }
+
+        function openPlayerEditor(id = null) {
+            const p = state.db.players.find(x => x.id === id) || { name: "", tiers: {}, img: "" };
+            document.getElementById('editingPlayerId').value = id || "";
+            document.getElementById('pNameInput').value = p.name;
+            document.getElementById('pImgData').value = p.img;
+            document.getElementById('delPlayerBtn').style.display = id ? 'block' : 'none';
+
+            document.getElementById('tierInputsArea').innerHTML = state.db.kits.map(k => `
+                <div class="input-group">
+                    <label>${k.name}</label>
+                    <select class="tier-select" data-kit="${k.name}">
+                        ${Object.keys(TIER_WEIGHTS).map(tw => `<option ${p.tiers[k.name] === tw ? 'selected' : ''}>${tw}</option>`).join('')}
+                    </select>
+                </div>`).join('');
+            
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        function savePlayer() {
+            const id = document.getElementById('editingPlayerId').value || 'p' + Date.now();
+            const name = document.getElementById('pNameInput').value;
+            let tiers = {};
+            document.querySelectorAll('.tier-select').forEach(s => tiers[s.dataset.kit] = s.value);
+            
+            const pData = { id, name, img: document.getElementById('pImgData').value, tiers };
+            const idx = state.db.players.findIndex(x => x.id === id);
+            
+            if (idx > -1) state.db.players[idx] = pData;
+            else state.db.players.push(pData);
+            
+            saveDB(); renderPlayers(); closeModals(); closeOverlay();
+        }
+
+        function deletePlayer() {
+            const id = document.getElementById('editingPlayerId').value;
+            state.db.players = state.db.players.filter(x => x.id !== id);
+            saveDB(); renderPlayers(); closeModals(); closeOverlay();
+        }
+
+        function openKitEditor() {
+            document.getElementById('kitModal').style.display = 'block';
+            document.getElementById('existingKits').innerHTML = state.db.kits.map(k => `
+                <div style="display:flex; justify-content:space-between; padding:10px; background:#000; margin-bottom:5px;">
+                    <span>${k.name}</span><i class="fas fa-trash" onclick="deleteKit('${k.id}')"></i>
+                </div>`).join('');
+        }
+
+        function saveKit() {
+            const n = document.getElementById('kNameInput').value.toUpperCase();
+            if (n) { state.db.kits.push({id: 'k'+Date.now(), name: n}); saveDB(); renderKits(); openKitEditor(); }
+        }
+
+        function deleteKit(id) {
+            state.db.kits = state.db.kits.filter(x => x.id !== id);
+            saveDB(); renderKits(); renderPlayers(); openKitEditor();
+        }
+
+        function processImage(input, target) {
+            const r = new FileReader();
+            r.onload = (e) => document.getElementById(target).value = e.target.result;
+            r.readAsDataURL(input.files[0]);
+        }
+
+        function initSortable() {
+            new Sortable(document.getElementById('playerList'), {
+                handle: '.drag-trigger', animation: 150,
+                onEnd: () => {
+                    let order = Array.from(document.querySelectorAll('.player-card')).map(c => c.dataset.id);
+                    // Actual sort logic for manual drag could go here
+                }
+            });
+        }
+
+        function saveDB() { localStorage.setItem('mc_tiers_v31', JSON.stringify(state.db)); }
+        function setKit(k) { state.currentKit = k; renderKits(); renderPlayers(); }
+        function closeOverlay() { document.getElementById('profileOverlay').style.display = 'none'; }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+
+        init();
+    </script>
+</body>
+</html>
